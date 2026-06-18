@@ -1,0 +1,744 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Letter For You 🤍</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Caveat:wght@400;500&family=Jost:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --beige: #e8ddd0;
+            --cream: #f5f0e8;
+            --cream-deep: #ede5d5;
+            --sage: #8faa8b;
+            --sage-light: #b5c9b1;
+            --sage-mist: #d4e0d2;
+            --off-white: #faf7f2;
+            --ink: #4a3f35;
+            --ink-soft: #7a6e65;
+            --ink-pale: #a09590;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow-x: hidden;
+        }
+
+        body {
+            background: var(--off-white);
+            font-family: 'Jost', sans-serif;
+            color: var(--ink);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ── CANVAS SPARKLES ── */
+        #sparkle-canvas {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── BACKGROUND GRADIENT ── */
+        .bg {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at 20% 30%, #dde8da55 0%, transparent 55%), radial-gradient(ellipse at 80% 70%, #e8ddd080 0%, transparent 55%), radial-gradient(ellipse at 50% 50%, #f5f0e8 0%, transparent 100%);
+            background-color: var(--off-white);
+            z-index: -1;
+        }
+
+        /* ── SCENE WRAPPER ── */
+        .scene {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            width: 100%;
+            padding: 2rem;
+        }
+
+        /* ── ENVELOPE STAGE ── */
+        #envelope-stage {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            animation: floatIn 1.2s cubic-bezier(.22,1,.36,1) both;
+            cursor: pointer;
+        }
+
+        @keyframes floatIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .envelope-label {
+            text-align: center;
+        }
+
+            .envelope-label h1 {
+                font-family: 'Cormorant Garamond', serif;
+                font-size: clamp(1.6rem, 4vw, 2.4rem);
+                font-weight: 300;
+                letter-spacing: 0.04em;
+                color: var(--ink);
+            }
+
+            .envelope-label p {
+                margin-top: 0.35rem;
+                font-size: 0.78rem;
+                font-weight: 300;
+                letter-spacing: 0.18em;
+                text-transform: uppercase;
+                color: var(--ink-pale);
+            }
+
+        /* ── ENVELOPE SVG WRAPPER ── */
+        .envelope-wrap {
+            position: relative;
+            width: min(340px, 85vw);
+            filter: drop-shadow(0 12px 40px rgba(74,63,53,.13));
+            transition: transform .35s ease, filter .35s ease;
+        }
+
+        #envelope-stage:hover .envelope-wrap {
+            transform: translateY(-6px) scale(1.02);
+            filter: drop-shadow(0 20px 50px rgba(74,63,53,.18));
+        }
+
+        /* ── SVG ENVELOPE ── */
+        .env-body {
+            fill: var(--beige);
+            stroke: #c9bbb0;
+            stroke-width: 1;
+        }
+
+        .env-flap-back {
+            fill: #ddd0c4;
+            stroke: #c9bbb0;
+            stroke-width: 1;
+        }
+
+        .env-flap {
+            fill: #d4c8bb;
+            stroke: #c9bbb0;
+            stroke-width: 1;
+            transform-origin: top center;
+            transform-box: fill-box;
+            transition: transform 0.7s cubic-bezier(.22,1,.36,1);
+        }
+
+        .env-fold-left {
+            fill: #cfc3b6;
+            stroke: #c9bbb0;
+            stroke-width: 0.5;
+        }
+
+        .env-fold-right {
+            fill: #d9cdc1;
+            stroke: #c9bbb0;
+            stroke-width: 0.5;
+        }
+
+        .env-seal {
+            fill: var(--sage);
+            transition: opacity .3s;
+        }
+
+        .env-seal-text {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 13px;
+            fill: white;
+            text-anchor: middle;
+            dominant-baseline: central;
+        }
+
+        /* opened state */
+        .envelope-wrap.opened .env-flap {
+            transform: rotateX(180deg);
+        }
+
+        .envelope-wrap.opened .env-seal {
+            opacity: 0;
+        }
+
+        /* ── PAPER / LETTER ── */
+        #letter-wrap {
+            position: absolute;
+            bottom: 18px;
+            left: 50%;
+            transform: translateX(-50%) translateY(0);
+            width: 88%;
+            z-index: -1;
+            transition: transform 1.1s cubic-bezier(.22,1,.36,1) 0.5s, opacity 0.6s ease 0.5s;
+            opacity: 0;
+        }
+
+        .envelope-wrap.opened #letter-wrap {
+            transform: translateX(-50%) translateY(-390px);
+            opacity: 1;
+        }
+
+        .paper-peek {
+            background: var(--cream);
+            border-radius: 4px 4px 0 0;
+            height: 90px;
+            width: 100%;
+            box-shadow: 0 -4px 20px rgba(74,63,53,.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .paper-peek-line {
+            width: 55%;
+            height: 1px;
+            background: var(--sage-mist);
+            position: relative;
+        }
+
+            .paper-peek-line::before,
+            .paper-peek-line::after {
+                content: '';
+                position: absolute;
+                width: 100%;
+                height: 1px;
+                background: var(--sage-mist);
+                top: 8px;
+            }
+
+            .paper-peek-line::after {
+                top: 16px;
+            }
+
+        /* ── FULL LETTER OVERLAY ── */
+        #letter-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            background: rgba(250,247,242,0);
+            opacity: 0;
+            pointer-events: none;
+            transition: background 0.8s ease, opacity 0.8s ease;
+        }
+
+            #letter-overlay.visible {
+                background: rgba(250,247,242,0.97);
+                opacity: 1;
+                pointer-events: all;
+            }
+
+        .letter-card {
+            background: var(--cream);
+            border-radius: 16px;
+            max-width: 560px;
+            width: 100%;
+            max-height: 88vh;
+            overflow-y: auto;
+            padding: clamp(2rem, 6vw, 3.5rem) clamp(1.8rem, 6vw, 3.5rem);
+            box-shadow: 0 4px 6px rgba(74,63,53,.04), 0 20px 60px rgba(74,63,53,.12), inset 0 0 0 1px rgba(143,170,139,.2);
+            position: relative;
+            transform: translateY(30px) scale(0.97);
+            transition: transform 0.9s cubic-bezier(.22,1,.36,1) 0.2s;
+            scrollbar-width: thin;
+            scrollbar-color: var(--sage-mist) transparent;
+        }
+
+        #letter-overlay.visible .letter-card {
+            transform: translateY(0) scale(1);
+        }
+
+        /* paper lines */
+        .letter-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 16px;
+            background-image: repeating-linear-gradient( transparent, transparent 27px, rgba(143,170,139,.13) 27px, rgba(143,170,139,.13) 28px );
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* left margin line */
+        .letter-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 64px;
+            width: 1px;
+            background: rgba(181,201,177,.3);
+            border-radius: 99px;
+            pointer-events: none;
+        }
+
+        .letter-inner {
+            position: relative;
+            z-index: 1;
+        }
+
+        .letter-date {
+            font-family: 'Caveat', cursive;
+            font-size: 0.95rem;
+            color: var(--ink-pale);
+            margin-bottom: 1.4rem;
+            text-align: right;
+            letter-spacing: 0.02em;
+        }
+
+        .letter-salutation {
+            font-family: 'Caveat', cursive;
+            font-size: 1.45rem;
+            font-weight: 500;
+            color: var(--ink);
+            margin-bottom: 1.2rem;
+            line-height: 1.3;
+        }
+
+        .letter-body {
+            font-family: 'Caveat', cursive;
+            font-size: 1.18rem;
+            line-height: 1.85;
+            color: var(--ink-soft);
+            white-space: pre-line;
+            margin-bottom: 1.8rem;
+        }
+
+        .letter-sign {
+            font-family: 'Caveat', cursive;
+            font-size: 1.2rem;
+            color: var(--ink);
+            line-height: 1.7;
+            margin-top: 0.5rem;
+        }
+
+        /* decorative wax-like top accent */
+        .letter-accent {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1.8rem;
+        }
+
+            .letter-accent svg {
+                width: 38px;
+                opacity: 0.6;
+            }
+
+        /* ── ONE MORE THING ── */
+        #more-wrap {
+            margin-top: 2.2rem;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(14px);
+            transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+
+            #more-wrap.visible {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+        .btn-more {
+            display: inline-block;
+            font-family: 'Jost', sans-serif;
+            font-size: 0.78rem;
+            font-weight: 400;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--sage);
+            border: 1px solid var(--sage-light);
+            border-radius: 99px;
+            padding: 0.55rem 1.6rem;
+            cursor: pointer;
+            background: transparent;
+            transition: background 0.25s, color 0.25s, transform 0.2s;
+        }
+
+            .btn-more:hover {
+                background: var(--sage-mist);
+                transform: translateY(-2px);
+            }
+
+        /* ── FINAL MESSAGE ── */
+        #final-msg {
+            margin-top: 2rem;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(16px) scale(0.97);
+            transition: opacity 0.9s ease, transform 0.9s ease;
+            pointer-events: none;
+        }
+
+            #final-msg.visible {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                pointer-events: all;
+            }
+
+            #final-msg p {
+                font-family: 'Cormorant Garamond', serif;
+                font-size: clamp(1.3rem, 4vw, 1.8rem);
+                font-weight: 300;
+                font-style: italic;
+                color: var(--ink);
+                letter-spacing: 0.02em;
+                line-height: 1.5;
+            }
+
+            #final-msg .tulip {
+                font-size: 2.2rem;
+                display: block;
+                margin-bottom: 0.4rem;
+                animation: sway 3s ease-in-out infinite;
+                transform-origin: bottom center;
+            }
+
+        @keyframes sway {
+            0%,100% {
+                transform: rotate(-4deg);
+            }
+
+            50% {
+                transform: rotate(4deg);
+            }
+        }
+
+        /* ── CLOSE BTN ── */
+        #close-letter {
+            position: fixed;
+            top: 1.3rem;
+            right: 1.5rem;
+            z-index: 200;
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: var(--beige);
+            border-radius: 50%;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            color: var(--ink-pale);
+            box-shadow: 0 2px 12px rgba(74,63,53,.1);
+            transition: background .2s, transform .2s;
+        }
+
+            #close-letter:hover {
+                background: var(--sage-mist);
+                transform: rotate(90deg);
+            }
+
+            #close-letter.visible {
+                display: flex;
+            }
+
+        /* ── FLOATING PARTICLES ── */
+        .particle {
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 2;
+            animation: drift linear infinite;
+            opacity: 0;
+        }
+
+        @keyframes drift {
+            0% {
+                transform: translateY(110vh) rotate(0deg);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 1;
+            }
+
+            90% {
+                opacity: 0.6;
+            }
+
+            100% {
+                transform: translateY(-10vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation: none !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg"></div>
+    <canvas id="sparkle-canvas"></canvas>
+
+    <!-- CLOSE BTN -->
+    <button id="close-letter" aria-label="Close letter">✕</button>
+
+    <!-- MAIN SCENE -->
+    <div class="scene">
+
+        <!-- ENVELOPE STAGE -->
+        <div id="envelope-stage" role="button" tabindex="0" aria-label="Open envelope">
+
+            <div class="envelope-label">
+                <h1>Something for you 🤍</h1>
+                <p>Click to open</p>
+            </div>
+
+            <div class="envelope-wrap" id="env-wrap">
+
+                <!-- Paper peeking out -->
+                <div id="letter-wrap">
+                    <div class="paper-peek">
+                        <div class="paper-peek-line"></div>
+                    </div>
+                </div>
+
+                <!-- Envelope SVG -->
+                <svg viewBox="0 0 340 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;">
+                    <!-- Body -->
+                    <rect class="env-body" x="2" y="40" width="336" height="178" rx="6" />
+                    <!-- Back flap (triangle behind) -->
+                    <polygon class="env-flap-back" points="2,40 170,140 338,40" />
+                    <!-- Left fold -->
+                    <polygon class="env-fold-left" points="2,40 2,218 140,130" />
+                    <!-- Right fold -->
+                    <polygon class="env-fold-right" points="338,40 338,218 200,130" />
+                    <!-- Bottom fold -->
+                    <polygon class="env-fold-right" points="2,218 338,218 170,120" opacity="0.6" />
+                    <!-- Front flap (folds open on click) -->
+                    <polygon class="env-flap" id="env-flap" points="2,40 170,148 338,40 336,38 170,2 4,38" />
+                    <!-- Seal -->
+                    <circle class="env-seal" cx="170" cy="148" r="18" />
+                    <text class="env-seal-text" x="170" y="148">🤍</text>
+                </svg>
+
+            </div><!-- /envelope-wrap -->
+        </div><!-- /envelope-stage -->
+
+    </div><!-- /scene -->
+    <!-- FULL LETTER OVERLAY -->
+    <div id="letter-overlay" role="dialog" aria-modal="true" aria-label="Letter">
+        <div class="letter-card" id="letter-card">
+            <div class="letter-inner">
+
+                <div class="letter-accent">
+                    <svg viewBox="0 0 40 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 48 C20 48 5 32 5 18 C5 10 12 4 20 4 C28 4 35 10 35 18 C35 32 20 48 20 48Z" fill="#8faa8b" opacity="0.5" />
+                        <path d="M20 4 L20 48" stroke="#8faa8b" stroke-width="1" opacity="0.4" />
+                        <path d="M12 15 C14 10 20 8 20 8 C20 8 26 10 28 15" stroke="#8faa8b" stroke-width="1" fill="none" opacity="0.4" />
+                    </svg>
+                </div>
+
+                <div class="letter-date" id="letter-date"></div>
+
+                <div class="letter-salutation">To my safe place❤️</div>
+
+                <div class="letter-body">
+                    مش عارفه ابدأ منين بس فعلا حاليا انا ادركت قد ايه حضرتك بتتعبي معانا و بتديني من طاقتك علشان نبقي احسن و بتطلعي احسن نسخة مننا الي كانت مستحيل تظهر غير بسبب ربنا ثم حضرتك
+
+                    فعلا حضرتك رجعتيلي روحي و خلتيني شخص اتولد من جديد لدرجة اني بنسي ساعات كل السنين الي فاتت لاني فعلا كنت ميته فيها
+
+                    عمري ما هنسي ان حضرتك اول شخص يثق فيا و في قدراتي و يشوف فيا حاجات كتير غير الي كانت ظاهره و تستحملي اندافعيتي و عصبيتي
+                    عملتي في التلت سنين دول الي اهلي طول حياتهم معرفوش يعملو ربعه و لذلك انا بجد ممتنه و بشكرك فعلا انك مش سطر من الcv بس حضرتك السبب اني هبدا اكتبه
+
+                    مهما عدي ناس وحشه اتاكدي انك احسن ام و اشطر دكتور و انجح متعافية شغالة علي نفسها دايما و فعلا so proud اني اعرف حد زيي حضرتك و مهما اتكلمت مش هوصف انا بحب حضرتك ازاي و انت ساعدتيني و اثرتي فيا ازاي و احب اقولك من تجربي ان حضرتك ان شاء الله حققتي هدفك و انك سبتي الأثر و ان شاء الله ربنا يجازيكي كل الخير و الثواب علي كل الدعم و الحب الي بتقدميه و يوفقك دايما و توصلي كل خبرتك للعالم كله
+                </div>
+
+                <div class="letter-sign">With love,<br>Fatima 🤍</div>
+
+                <!-- ONE MORE THING -->
+                <div id="more-wrap">
+                    <button class="btn-more" id="btn-more">One more thing…</button>
+                </div>
+
+                <!-- FINAL MESSAGE -->
+                <div id="final-msg">
+                    <span class="tulip">🥰</span>
+                    <p>Thank you for helping me grow.</p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+// ── DATE ──
+const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const d = new Date();
+document.getElementById('letter-date').textContent =
+  `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+
+// ── SPARKLE CANVAS ──
+const canvas = document.getElementById('sparkle-canvas');
+const ctx = canvas.getContext('2d');
+let W, H, sparks = [];
+
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+function Spark() {
+  this.reset();
+}
+Spark.prototype.reset = function() {
+  this.x  = Math.random() * W;
+  this.y  = Math.random() * H;
+  this.r  = Math.random() * 1.4 + 0.4;
+  this.a  = Math.random() * Math.PI * 2;
+  this.vx = (Math.random() - 0.5) * 0.25;
+  this.vy = (Math.random() - 0.5) * 0.25;
+  this.life = 0;
+  this.maxLife = 120 + Math.random() * 200;
+  const palette = ['#8faa8b','#c9bbb0','#b5c9b1','#d4c8bb','#e8ddd0'];
+  this.color = palette[Math.floor(Math.random() * palette.length)];
+};
+Spark.prototype.draw = function() {
+  const progress = this.life / this.maxLife;
+  const alpha = progress < 0.2 ? progress / 0.2 : progress > 0.8 ? (1 - progress) / 0.2 : 1;
+  ctx.save();
+  ctx.globalAlpha = alpha * 0.7;
+  ctx.translate(this.x, this.y);
+  ctx.rotate(this.a + this.life * 0.02);
+  // 4-pointed star
+  ctx.beginPath();
+  for (let i = 0; i < 4; i++) {
+    const ang = (i / 4) * Math.PI * 2;
+    const outer = this.r * 2.5;
+    const inner = this.r * 0.8;
+    ctx.lineTo(Math.cos(ang) * outer, Math.sin(ang) * outer);
+    ctx.lineTo(Math.cos(ang + Math.PI / 4) * inner, Math.sin(ang + Math.PI / 4) * inner);
+  }
+  ctx.closePath();
+  ctx.fillStyle = this.color;
+  ctx.fill();
+  ctx.restore();
+};
+
+for (let i = 0; i < 55; i++) {
+  const s = new Spark();
+  s.life = Math.random() * s.maxLife; // stagger starts
+  sparks.push(s);
+}
+
+function animate() {
+  ctx.clearRect(0, 0, W, H);
+  sparks.forEach(s => {
+    s.x += s.vx; s.y += s.vy; s.life++;
+    if (s.life > s.maxLife) s.reset();
+    else s.draw();
+  });
+  requestAnimationFrame(animate);
+}
+animate();
+
+// ── ENVELOPE OPEN ──
+const stage   = document.getElementById('envelope-stage');
+const envWrap = document.getElementById('env-wrap');
+const overlay = document.getElementById('letter-overlay');
+const closeBtn= document.getElementById('close-letter');
+let opened = false;
+
+function openEnvelope() {
+  if (opened) return;
+  opened = true;
+
+  stage.style.pointerEvents = 'none';
+  envWrap.classList.add('opened');
+
+  // after paper slides up, show full letter
+  setTimeout(() => {
+    overlay.classList.add('visible');
+    closeBtn.classList.add('visible');
+    document.body.style.overflow = 'hidden';
+    spawnParticles();
+  }, 900);
+}
+
+stage.addEventListener('click', openEnvelope);
+stage.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openEnvelope(); });
+
+function closeLetter() {
+  overlay.classList.remove('visible');
+  closeBtn.classList.remove('visible');
+  document.body.style.overflow = '';
+}
+closeBtn.addEventListener('click', closeLetter);
+
+// ── SCROLL → SHOW "ONE MORE THING" ──
+const card    = document.getElementById('letter-card');
+const moreWrap= document.getElementById('more-wrap');
+const finalMsg= document.getElementById('final-msg');
+const btnMore = document.getElementById('btn-more');
+let moreShown = false;
+
+card.addEventListener('scroll', () => {
+  if (moreShown) return;
+  const nearBottom = card.scrollTop + card.clientHeight >= card.scrollHeight - 30;
+  if (nearBottom) {
+    moreShown = true;
+    moreWrap.classList.add('visible');
+  }
+});
+
+btnMore.addEventListener('click', () => {
+  btnMore.style.display = 'none';
+  finalMsg.classList.add('visible');
+});
+
+// ── FLOATING PARTICLES ──
+function spawnParticles() {
+  const colors = ['#8faa8b','#b5c9b1','#d4e0d2','#e8ddd0','#c9bbb0'];
+  for (let i = 0; i < 18; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = Math.random() * 6 + 3;
+    p.style.cssText = `
+      width:${size}px; height:${size}px;
+      left:${Math.random()*100}vw;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      animation-duration:${6 + Math.random()*8}s;
+      animation-delay:${Math.random()*4}s;
+      opacity:0;
+    `;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 20000);
+  }
+}
+    </script>
+</body>
+</html>
